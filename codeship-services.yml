@@ -1,0 +1,5 @@
+sidekiq-workflows:
+  build:
+    dockerfile: Dockerfile
+    encrypted_args_file: env.encrypted
+  cached: true
