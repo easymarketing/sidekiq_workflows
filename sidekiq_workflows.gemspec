@@ -2,8 +2,8 @@ Gem::Specification.new 'sidekiq_workflows', '0.1' do |s|
   s.licenses = %w[MIT]
   s.summary = "Sidekiq extension providing a workflow API on top of Sidekiq Pro's batches"
   s.description = "Sidekiq extension providing a workflow API on top of Sidekiq Pro's batches"
-  s.authors = ['Christian Semmler']
-  s.email = 'mail@csemmler.com'
+  s.authors = ['Marian Theisen', 'Christian Semmler', 'Patrick Detlefsen']
+  s.email = ['mt@zeit.io', 'mail@csemmler.com', 'pd@zeit.io']
   s.homepage = 'https://github.com/easymarketing/sidekiq_workflows'
   s.files = %w[
     Rakefile
