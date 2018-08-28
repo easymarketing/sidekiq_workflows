@@ -20,7 +20,7 @@ module SidekiqWorkflows
           child_batch.on(:complete, 'SidekiqWorkflows::Worker#on_complete', workflow: workflow.serialize, workflow_uuid: workflow.workflow_uuid)
           child_batch.jobs do
             workflow.workers.each do |entry|
-              if delay
+              if entry[:delay]
                 entry[:worker].perform_in(entry[:delay], *entry[:payload])
               else
                 entry[:worker].perform_async(*entry[:payload])
