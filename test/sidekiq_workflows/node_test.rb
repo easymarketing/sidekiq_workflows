@@ -1,5 +1,8 @@
 require_relative '../test_helper'
 require 'active_support/time'
+require 'sidekiq_workflows/root_node'
+require 'sidekiq_workflows/worker_node'
+require 'sidekiq_workflows/group_node'
 
 describe SidekiqWorkflows::Node do
   class FooWorker
@@ -18,7 +21,7 @@ describe SidekiqWorkflows::Node do
   let(:on_partial_complete) { 'dong' }
 
   it 'adds a child and references parent' do
-    root = SidekiqWorkflows::Node.root(workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete)
+    root = SidekiqWorkflows::RootNode.new(workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete)
     a = root.add_child(FooWorker)
     b = a.add_child(BazWorker)
     c = b.add_child(BadWorker)
@@ -86,6 +89,37 @@ describe SidekiqWorkflows::Node do
       expect(workflow.children[1].children[0].worker).must_equal BazWorker
       expect(workflow.children[1].children[0].payload).must_equal ['bazfoo']
     end
+
+    it 'should build a tree with a group' do
+      workflow = SidekiqWorkflows.build do
+        perform(FooWorker, 'foo').then do
+          perform(BazWorker, 'baz')
+        end
+
+        perform(BadWorker, 'bad').then do
+          perform(FooWorker, 'badfoo').then do
+            performGroup([
+              {worker: BazWorker, payload: ['bazfoo'], delay: 30.seconds},
+              {worker: BazWorker, payload: ['baztwo'] }
+            ])
+          end
+        end
+      end
+
+      expect(workflow.children.length).must_equal 2
+      expect(workflow.children[0].worker).must_equal FooWorker
+      expect(workflow.children[1].worker).must_equal BadWorker
+
+      expect(workflow.children[0].children[0].worker).must_equal BazWorker
+      expect(workflow.children[1].children[0].worker).must_equal FooWorker
+      expect(workflow.children[1].children[0].payload).must_equal ['badfoo']
+      expect(workflow.children[1].children[0].children[0].workers[0][:worker]).must_equal BazWorker
+      expect(workflow.children[1].children[0].children[0].workers[0][:payload]).must_equal ['bazfoo']
+      expect(workflow.children[1].children[0].children[0].workers[0][:delay]).must_equal(30)
+      expect(workflow.children[1].children[0].children[0].workers[1][:worker]).must_equal BazWorker
+      expect(workflow.children[1].children[0].children[0].workers[1][:payload]).must_equal ['baztwo']
+      expect(workflow.children[1].children[0].children[0].workers[1][:delay]).must_be_nil
+    end
   end
 
   describe '(de-)serialization' do
@@ -96,7 +130,10 @@ describe SidekiqWorkflows::Node do
         end
 
         perform(BadWorker, 'bad').then do
-          perform(FooWorker, 'badfoo', with_delay: 30.seconds).then do
+          performGroup([
+            {worker: BazWorker, payload: ['bazfoo'], delay: 30.seconds},
+            {worker: BazWorker, payload: ['baztwo']}
+          ]).then do
             perform(BazWorker, 'bazfoo')
           end
         end
@@ -110,9 +147,8 @@ describe SidekiqWorkflows::Node do
 
       expect(workflow.children[0].children[0].worker).must_equal BazWorker
       expect(workflow.children[0].children[0].delay).must_be_nil
-      expect(workflow.children[1].children[0].worker).must_equal FooWorker
-      expect(workflow.children[1].children[0].payload).must_equal ['badfoo']
-      expect(workflow.children[1].children[0].delay).must_equal 30
+      expect(workflow.children[1].children[0].workers[0][:worker]).must_equal BazWorker
+      expect(workflow.children[1].children[0].workers[1][:worker]).must_equal BazWorker
       expect(workflow.children[1].children[0].children[0].worker).must_equal BazWorker
       expect(workflow.children[1].children[0].children[0].payload).must_equal ['bazfoo']
 
@@ -123,7 +159,7 @@ describe SidekiqWorkflows::Node do
 
   describe 'Worker' do
     it 'should perform async the given worker' do
-      workflow = SidekiqWorkflows::Node.new(worker: FooWorker, payload: %w[foo bar], parent: nil)
+      workflow = SidekiqWorkflows::WorkerNode.new(worker: FooWorker, payload: %w[foo bar], parent: nil)
       FooWorker.expects(:perform_async).with('foo', 'bar')
 
       Sidekiq::Testing.inline! do

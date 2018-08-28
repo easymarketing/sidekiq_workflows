@@ -15,14 +15,16 @@ module SidekiqWorkflows
       Builder.new(child, skip_workers)
     end
 
+    def performGroup(workers)
+      filtered_workers = workers.reject { |w| skip_workers.include?(w[:worker]) }
+      return self if filtered_workers.empty?
+      child = @node.add_group(filtered_workers)
+      Builder.new(child, skip_workers)
+    end
+
     def then(&block)
       instance_eval(&block)
     end
   end
 
-  def self.build(workflow_uuid: nil, on_partial_complete: nil, except: [], &block)
-    root = Node.root(workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete)
-    Builder.new(root, except).then(&block)
-    root
-  end
 end

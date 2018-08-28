@@ -9,7 +9,26 @@ module SidekiqWorkflows
     def perform(workflow)
       workflow = ensure_deserialized(workflow)
 
-      if workflow.worker
+      case workflow.class
+      when RootNode
+        perform_children(batch, workflow)
+      when GroupNode
+        batch.jobs do
+          child_batch = Sidekiq::Batch.new
+          child_batch.callback_queue = SidekiqWorkflows.callback_queue unless SidekiqWorkflows.callback_queue.nil?
+          child_batch.description = "Workflow #{workflow.workflow_uuid || '-'} with #{workflow.worker}"
+          child_batch.on(:complete, 'SidekiqWorkflows::Worker#on_complete', workflow: workflow.serialize, workflow_uuid: workflow.workflow_uuid)
+          child_batch.jobs do
+            workflow.workers.each do |entry|
+              if delay
+                entry[:worker].perform_in(entry[:delay], *entry[:payload])
+              else
+                entry[:worker].perform_async(*entry[:payload])
+              end
+            end
+          end
+        end
+      when WorkerNode
         batch.jobs do
           child_batch = Sidekiq::Batch.new
           child_batch.callback_queue = SidekiqWorkflows.callback_queue unless SidekiqWorkflows.callback_queue.nil?
@@ -23,8 +42,6 @@ module SidekiqWorkflows
             end
           end
         end
-      else
-        perform_children(batch, workflow)
       end
     end
 
