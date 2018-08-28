@@ -12,11 +12,11 @@ module SidekiqWorkflows
       case workflow.class
       when RootNode
         perform_children(batch, workflow)
-      when GroupNode
+      when WorkerNode
         batch.jobs do
           child_batch = Sidekiq::Batch.new
           child_batch.callback_queue = SidekiqWorkflows.callback_queue unless SidekiqWorkflows.callback_queue.nil?
-          child_batch.description = "Workflow #{workflow.workflow_uuid || '-'} with #{workflow.worker}"
+          child_batch.description = "Workflow #{workflow.workflow_uuid || '-'}"
           child_batch.on(:complete, 'SidekiqWorkflows::Worker#on_complete', workflow: workflow.serialize, workflow_uuid: workflow.workflow_uuid)
           child_batch.jobs do
             workflow.workers.each do |entry|
@@ -25,20 +25,6 @@ module SidekiqWorkflows
               else
                 entry[:worker].perform_async(*entry[:payload])
               end
-            end
-          end
-        end
-      when WorkerNode
-        batch.jobs do
-          child_batch = Sidekiq::Batch.new
-          child_batch.callback_queue = SidekiqWorkflows.callback_queue unless SidekiqWorkflows.callback_queue.nil?
-          child_batch.description = "Workflow #{workflow.workflow_uuid || '-'} with #{workflow.worker}"
-          child_batch.on(:complete, 'SidekiqWorkflows::Worker#on_complete', workflow: workflow.serialize, workflow_uuid: workflow.workflow_uuid)
-          child_batch.jobs do
-            if workflow.delay
-              workflow.worker.perform_in(workflow.delay, *workflow.payload)
-            else
-              workflow.worker.perform_async(*workflow.payload)
             end
           end
         end

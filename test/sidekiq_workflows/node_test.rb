@@ -2,7 +2,6 @@ require_relative '../test_helper'
 require 'active_support/time'
 require 'sidekiq_workflows/root_node'
 require 'sidekiq_workflows/worker_node'
-require 'sidekiq_workflows/group_node'
 
 describe SidekiqWorkflows::Node do
   class FooWorker
@@ -57,15 +56,14 @@ describe SidekiqWorkflows::Node do
       end
 
       expect(workflow.children.length).must_equal 2
-      expect(workflow.children[0].worker).must_equal FooWorker
-      expect(workflow.children[1].worker).must_equal BadWorker
-
-      expect(workflow.children[0].children[0].worker).must_equal BazWorker
-      expect(workflow.children[1].children[0].worker).must_equal FooWorker
-      expect(workflow.children[1].children[0].payload).must_equal ['badfoo']
-      expect(workflow.children[1].children[0].children[0].delay).must_equal 30
-      expect(workflow.children[1].children[0].children[0].worker).must_equal BazWorker
-      expect(workflow.children[1].children[0].children[0].payload).must_equal ['bazfoo']
+      expect(workflow.children[0].workers[0][:worker]).must_equal FooWorker
+      expect(workflow.children[1].workers[0][:worker]).must_equal BadWorker
+      expect(workflow.children[0].children[0].workers[0][:worker]).must_equal BazWorker
+      expect(workflow.children[1].children[0].workers[0][:worker]).must_equal FooWorker
+      expect(workflow.children[1].children[0].workers[0][:payload]).must_equal ['badfoo']
+      expect(workflow.children[1].children[0].children[0].workers[0][:delay]).must_equal 30
+      expect(workflow.children[1].children[0].children[0].workers[0][:worker]).must_equal BazWorker
+      expect(workflow.children[1].children[0].children[0].workers[0][:payload]).must_equal ['bazfoo']
     end
 
     it 'should build a tree with skipping workers' do
@@ -82,12 +80,12 @@ describe SidekiqWorkflows::Node do
       end
 
       expect(workflow.children.length).must_equal 2
-      expect(workflow.children[0].worker).must_equal BazWorker
-      expect(workflow.children[1].worker).must_equal BadWorker
+      expect(workflow.children[0].workers[0][:worker]).must_equal BazWorker
+      expect(workflow.children[1].workers[0][:worker]).must_equal BadWorker
 
       expect(workflow.children[0].children).must_be_empty
-      expect(workflow.children[1].children[0].worker).must_equal BazWorker
-      expect(workflow.children[1].children[0].payload).must_equal ['bazfoo']
+      expect(workflow.children[1].children[0].workers[0][:worker]).must_equal BazWorker
+      expect(workflow.children[1].children[0].workers[0][:payload]).must_equal ['bazfoo']
     end
 
     it 'should build a tree with a group' do
@@ -98,7 +96,7 @@ describe SidekiqWorkflows::Node do
 
         perform(BadWorker, 'bad').then do
           perform(FooWorker, 'badfoo').then do
-            performGroup([
+            perform_group([
               {worker: BazWorker, payload: ['bazfoo'], delay: 30.seconds},
               {worker: BazWorker, payload: ['baztwo'] }
             ])
@@ -107,12 +105,12 @@ describe SidekiqWorkflows::Node do
       end
 
       expect(workflow.children.length).must_equal 2
-      expect(workflow.children[0].worker).must_equal FooWorker
-      expect(workflow.children[1].worker).must_equal BadWorker
+      expect(workflow.children[0].workers[0][:worker]).must_equal FooWorker
+      expect(workflow.children[1].workers[0][:worker]).must_equal BadWorker
 
-      expect(workflow.children[0].children[0].worker).must_equal BazWorker
-      expect(workflow.children[1].children[0].worker).must_equal FooWorker
-      expect(workflow.children[1].children[0].payload).must_equal ['badfoo']
+      expect(workflow.children[0].children[0].workers[0][:worker]).must_equal BazWorker
+      expect(workflow.children[1].children[0].workers[0][:worker]).must_equal FooWorker
+      expect(workflow.children[1].children[0].workers[0][:payload]).must_equal ['badfoo']
       expect(workflow.children[1].children[0].children[0].workers[0][:worker]).must_equal BazWorker
       expect(workflow.children[1].children[0].children[0].workers[0][:payload]).must_equal ['bazfoo']
       expect(workflow.children[1].children[0].children[0].workers[0][:delay]).must_equal(30)
@@ -130,7 +128,7 @@ describe SidekiqWorkflows::Node do
         end
 
         perform(BadWorker, 'bad').then do
-          performGroup([
+          perform_group([
             {worker: BazWorker, payload: ['bazfoo'], delay: 30.seconds},
             {worker: BazWorker, payload: ['baztwo']}
           ]).then do
@@ -142,15 +140,15 @@ describe SidekiqWorkflows::Node do
       workflow = SidekiqWorkflows.deserialize(serialized)
 
       expect(workflow.children.length).must_equal 2
-      expect(workflow.children[0].worker).must_equal FooWorker
-      expect(workflow.children[1].worker).must_equal BadWorker
+      expect(workflow.children[0].workers[0][:worker]).must_equal FooWorker
+      expect(workflow.children[1].workers[0][:worker]).must_equal BadWorker
 
-      expect(workflow.children[0].children[0].worker).must_equal BazWorker
-      expect(workflow.children[0].children[0].delay).must_be_nil
+      expect(workflow.children[0].children[0].workers[0][:worker]).must_equal BazWorker
+      expect(workflow.children[0].children[0].workers[0][:delay]).must_be_nil
       expect(workflow.children[1].children[0].workers[0][:worker]).must_equal BazWorker
       expect(workflow.children[1].children[0].workers[1][:worker]).must_equal BazWorker
-      expect(workflow.children[1].children[0].children[0].worker).must_equal BazWorker
-      expect(workflow.children[1].children[0].children[0].payload).must_equal ['bazfoo']
+      expect(workflow.children[1].children[0].children[0].workers[0][:worker]).must_equal BazWorker
+      expect(workflow.children[1].children[0].children[0].workers[0][:payload]).must_equal ['bazfoo']
 
       expect(workflow.all_nodes.map(&:workflow_uuid)).must_equal([workflow_uuid] * 6)
       expect(workflow.all_nodes.map(&:on_partial_complete)).must_equal([on_partial_complete] * 6)
@@ -159,7 +157,7 @@ describe SidekiqWorkflows::Node do
 
   describe 'Worker' do
     it 'should perform async the given worker' do
-      workflow = SidekiqWorkflows::WorkerNode.new(worker: FooWorker, payload: %w[foo bar], parent: nil)
+      workflow = SidekiqWorkflows::WorkerNode.new(workers: [{worker: FooWorker, payload: %w[foo bar]}])
       FooWorker.expects(:perform_async).with('foo', 'bar')
 
       Sidekiq::Testing.inline! do

@@ -15,7 +15,6 @@ module SidekiqWorkflows
 
     def to_h
       {
-        node_type: 'root',
         workflow_uuid: workflow_uuid,
         on_partial_complete: on_partial_complete,
         children: @children.map(&:to_h)

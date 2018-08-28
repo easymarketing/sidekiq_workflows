@@ -1,12 +1,12 @@
 module SidekiqWorkflows
   module Node
     def add_child(worker, *payload, with_delay: nil)
-      @children << (child = WorkerNode.new(worker: worker, workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete, delay: with_delay, payload: payload, parent: self))
+      @children << (child = WorkerNode.new(workers: [{worker: worker, payload: payload, delay: with_delay}], workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete, parent: self))
       child
     end
 
     def add_group(workers)
-      @children << (child = GroupNode.new(workers: workers, workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete, parent: self))
+      @children << (child = WorkerNode.new(workers: workers, workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete, parent: self))
       child
     end
 

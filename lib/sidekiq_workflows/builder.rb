@@ -15,7 +15,7 @@ module SidekiqWorkflows
       Builder.new(child, skip_workers)
     end
 
-    def performGroup(workers)
+    def perform_group(workers)
       filtered_workers = workers.reject { |w| skip_workers.include?(w[:worker]) }
       return self if filtered_workers.empty?
       child = @node.add_group(filtered_workers)

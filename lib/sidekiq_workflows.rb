@@ -18,12 +18,7 @@ module SidekiqWorkflows
   def self.from_h(hash, parent = nil)
     parent ||= RootNode.new(workflow_uuid: hash[:workflow_uuid], on_partial_complete: hash[:on_partial_complete])
     hash[:children].each do |h|
-      case h[:node_type]
-      when 'worker'
-        child = parent.add_child(h[:worker], *h[:payload], with_delay: h[:delay])
-      when 'group'
-        child = parent.add_group(h[:workers])
-      end
+      child = parent.add_group(h[:workers])
       from_h(h, child)
     end
     parent
