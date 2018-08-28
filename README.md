@@ -57,6 +57,16 @@ end
 
 This is especially useful if you want to report progress of the workflow to a client (for example, send a notification). The callback can also be used to verify sucess or failure. When using the example above, the callback will be called 4 times in total (for `A`, `B`, `C`, `D`). The `status` hash contains the `workflow_uuid` if present. For more details on `status` and `options`, see: https://github.com/mperham/sidekiq/wiki/Batches#callbacks
 
+There's a an additional parameter to `perform` as well:
+
+* `with_delay`: Wait an amount of time (`to_i` must yield seconds as an integer) before launching this worker. This uses Sidekiq's `perform_in` under the hood.
+
+Modifying the example above:
+
+`perform(C, 'first', 'second', 'third', with_delay: 5.minutes)`
+
+After the successful completion of `B`, `C` will be scheduled for execution at 5 minutes in the future.
+
 ## Launching a workflow
 
 Once defined, you can launch a workflow like this:
