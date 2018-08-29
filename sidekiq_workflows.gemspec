@@ -1,4 +1,4 @@
-Gem::Specification.new 'sidekiq_workflows', '0.1' do |s|
+Gem::Specification.new 'sidekiq_workflows', '0.2.0' do |s|
   s.licenses = %w[MIT]
   s.summary = "Sidekiq extension providing a workflow API on top of Sidekiq Pro's batches"
   s.description = "Sidekiq extension providing a workflow API on top of Sidekiq Pro's batches"
