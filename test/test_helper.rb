@@ -4,6 +4,8 @@ require 'mocha/minitest'
 require 'sidekiq/testing'
 require 'fakeredis'
 
+require 'pry'
+
 Sidekiq.configure_client do |config|
   config.redis = {driver: Redis::Connection::Memory}
 end

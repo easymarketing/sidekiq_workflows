@@ -158,6 +158,7 @@ describe SidekiqWorkflows::Node do
   describe 'Worker' do
     it 'should perform async the given worker' do
       workflow = SidekiqWorkflows::WorkerNode.new(workers: [{worker: FooWorker, payload: %w[foo bar]}])
+      SidekiqWorkflows.stubs(from_h: workflow)
       FooWorker.expects(:perform_async).with('foo', 'bar')
 
       Sidekiq::Testing.inline! do

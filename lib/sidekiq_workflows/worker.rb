@@ -9,10 +9,10 @@ module SidekiqWorkflows
     def perform(workflow)
       workflow = ensure_deserialized(workflow)
 
-      case workflow.class
-      when RootNode
+      case workflow.class.name
+      when 'SidekiqWorkflows::RootNode'
         perform_children(batch, workflow)
-      when WorkerNode
+      when 'SidekiqWorkflows::WorkerNode'
         batch.jobs do
           child_batch = Sidekiq::Batch.new
           child_batch.callback_queue = SidekiqWorkflows.callback_queue unless SidekiqWorkflows.callback_queue.nil?
