@@ -165,5 +165,18 @@ describe SidekiqWorkflows::Node do
         SidekiqWorkflows::Worker.perform_workflow(workflow)
       end
     end
+
+    it 'should perform async the given workers' do
+      workflow = SidekiqWorkflows.build do
+        perform_group([{worker: FooWorker, payload: ['foo', 'bar']}, {worker: BazWorker, payload: ['bar', 'foo']}])
+      end
+
+      FooWorker.expects(:perform_async).with('foo', 'bar')
+      BazWorker.expects(:perform_async).with('bar', 'foo')
+
+      Sidekiq::Testing.inline! do
+        SidekiqWorkflows::Worker.perform_workflow(workflow)
+      end
+    end
   end
 end
