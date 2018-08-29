@@ -54,7 +54,7 @@ end
 
 * `workflow_uuid`: To identify this workflow instance, you may want to provide an ID.
 * `except`: An array of worker classes to be entirely skipped in this workflow instance.
-* `on_partial_complete`: A callback that is being called whenever a group of workers within the workflow has completed (successfully or not). Modifying the example above: 
+* `on_partial_complete`: A callback that is being called whenever a group of workers within the workflow has completed (successfully or not). Modifying the example above:
 
 ```
 class WorkflowCallbacks; def on_partial_complete(status, options); end; end
@@ -120,3 +120,10 @@ SidekiqWorkflows.callback_queue = 'another_queue'
 `callback_queue` is the name of the Sidekiq queue which will be used for the `on_partial_complete` and `on_complete` callback workers.
 
 If not specified, the `default` Sidekiq queue will be used.
+
+# Development
+
+## Run tests locally
+
+1. `CONTRIBSYS_CREDENTIALS=your-secret-sidekiq-pro-creds docker-compose build`
+2. `docker-compose run --rm sidekiq-workflows-test bundle exec rake test`
