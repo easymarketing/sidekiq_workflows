@@ -4,7 +4,7 @@ module SidekiqWorkflows
   class Worker
     include Sidekiq::Worker
 
-    sidekiq_options retry: false, queue: SidekiqWorkflows.worker_queue || 'default'
+    sidekiq_options retry: false
 
     def perform(workflow)
       workflow = ensure_deserialized(workflow)
@@ -43,7 +43,7 @@ module SidekiqWorkflows
     end
 
     def self.perform_async(workflow, *args)
-      super(workflow.serialize, *args)
+      set(queue: worker_queue).send(:perform_async, workflow.serialize, *args)
     end
 
     def self.perform_workflow(workflow, on_complete: nil, on_complete_options: {})
@@ -58,6 +58,10 @@ module SidekiqWorkflows
     end
 
     private
+
+    def self.worker_queue
+      SidekiqWorkflows.worker_queue || Sidekiq.default_worker_options['queue']
+    end
 
     def perform_children(batch, workflow)
       batch.jobs do
