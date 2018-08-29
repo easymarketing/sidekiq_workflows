@@ -26,18 +26,25 @@ A workflow consists of Sidekiq workers which can execute in parallel. On success
 class A; include Sidekiq::Worker; def perform(x); end; end
 class B; include Sidekiq::Worker; def perform(x, y); end; end
 class C; include Sidekiq::Worker; def perform(x, y, z); end; end
-class D; include Sidekiq::Worker; def perform; end; end
+class D; include Sidekiq::Worker; def perform(x); end; end
+class E; include Sidekiq::Worker; def perform(x); end; end
+class F; include Sidekiq::Worker; def perform; end; end
 
 workflow = SidekiqWorkflows.build do
   perform(A, 'first param to perform')
   perform(B, 'first', 'second').then do
     perform(C, 'first', 'second', 'third')
-    perform(D)
+    perform([
+      {worker: D, payload: ['first']},
+      {worker: E, payload: ['first']}
+    ]).then do
+      perform(F)
+    end
   end
 end
 ```
 
-`A` and `B` run in parallel. As soon as `B` completes successfully, `C` and `D` will be launched, running in parallel as well.
+`A` and `B` run in parallel. As soon as `B` completes successfully, `C`, `D` and `E` will be launched, running in parallel as well. At last, when `D` and `E` both complete successfully, `F` will be launched.
 
 ### Additional parameters
 
@@ -55,7 +62,7 @@ workflow = SidekiqWorkflows.build(on_partial_complete: 'WorkflowCallbacks#on_par
 end
 ```
 
-This is especially useful if you want to report progress of the workflow to a client (for example, send a notification). The callback can also be used to verify sucess or failure. When using the example above, the callback will be called 4 times in total (for `A`, `B`, `C`, `D`). The `status` hash contains the `workflow_uuid` if present. For more details on `status` and `options`, see: https://github.com/mperham/sidekiq/wiki/Batches#callbacks
+This is especially useful if you want to report progress of the workflow to a client (for example, send a notification). The callback can also be used to verify sucess or failure. When using the example above, the callback will be called 5 times in total (for `A`, `B`, `C`, `[D, E]`, `F`). The `status` hash contains the `workflow_uuid` if present. For more details on `status` and `options`, see: https://github.com/mperham/sidekiq/wiki/Batches#callbacks
 
 There's a an additional parameter to `perform` as well:
 
@@ -66,6 +73,13 @@ Modifying the example above:
 `perform(C, 'first', 'second', 'third', delay: 5.minutes)`
 
 After the successful completion of `B`, `C` will be scheduled for execution at 5 minutes in the future.
+
+Generally, `perform` can be used in two ways:
+
+* `perform(C, 'first', 'second', 'third', delay: 5.minutes)`
+* `perform([worker: C, payload: ['first', 'second', 'third'], delay: 5.minutes])`
+
+The second form can be used to perform multiple workers within a single batch.
 
 ## Launching a workflow
 
