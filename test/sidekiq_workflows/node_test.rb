@@ -19,9 +19,9 @@ describe SidekiqWorkflows::Node do
 
   it 'adds a child and references parent' do
     root = SidekiqWorkflows::RootNode.new(workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete)
-    a = root.add_child(FooWorker)
-    b = a.add_child(BazWorker)
-    c = b.add_child(BadWorker)
+    a = root.add_group([worker: FooWorker])
+    b = a.add_group([worker: BazWorker])
+    c = b.add_group([worker: BadWorker])
 
     expect(c.parent).must_equal b
     expect(c.children.length).must_equal 0
@@ -48,7 +48,7 @@ describe SidekiqWorkflows::Node do
 
         perform(BadWorker, 'bad').then do
           perform(FooWorker, 'badfoo').then do
-            perform(BazWorker, 'bazfoo', with_delay: 30.seconds)
+            perform(BazWorker, 'bazfoo', delay: 30.seconds)
           end
         end
       end
@@ -94,7 +94,7 @@ describe SidekiqWorkflows::Node do
 
         perform(BadWorker, 'bad').then do
           perform(FooWorker, 'badfoo').then do
-            perform_group([
+            perform([
               {worker: BazWorker, payload: ['bazfoo'], delay: 30.seconds},
               {worker: BazWorker, payload: ['baztwo'] }
             ])
@@ -126,7 +126,7 @@ describe SidekiqWorkflows::Node do
         end
 
         perform(BadWorker, 'bad').then do
-          perform_group([
+          perform([
             {worker: BazWorker, payload: ['bazfoo'], delay: 30.seconds},
             {worker: BazWorker, payload: ['baztwo']}
           ]).then do
@@ -168,7 +168,7 @@ describe SidekiqWorkflows::Node do
 
     it 'should perform async the given workers' do
       workflow = SidekiqWorkflows.build do
-        perform_group([{worker: FooWorker, payload: ['foo', 'bar']}, {worker: BazWorker, payload: ['bar', 'foo']}])
+        perform([{worker: FooWorker, payload: ['foo', 'bar']}, {worker: BazWorker, payload: ['bar', 'foo']}])
       end
 
       FooWorker.expects(:perform_async).with('foo', 'bar')

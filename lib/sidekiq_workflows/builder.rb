@@ -9,16 +9,12 @@ module SidekiqWorkflows
       @skip_workers = skip_workers
     end
 
-    def perform(worker, *payload, with_delay: nil)
-      return self if skip_workers.include?(worker)
-      child = @node.add_child(worker, *payload, with_delay: with_delay)
-      Builder.new(child, skip_workers)
-    end
+    def perform(workers, *args, delay: nil)
+      workers = [worker: workers, payload: args, delay: delay] unless workers.is_a?(Array)
+      workers.reject! { |w| skip_workers.include?(w[:worker]) }
+      return self if workers.empty?
 
-    def perform_group(workers)
-      filtered_workers = workers.reject { |w| skip_workers.include?(w[:worker]) }
-      return self if filtered_workers.empty?
-      child = @node.add_group(filtered_workers)
+      child = @node.add_group(workers)
       Builder.new(child, skip_workers)
     end
 
