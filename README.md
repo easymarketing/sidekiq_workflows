@@ -46,6 +46,8 @@ end
 
 `A` and `B` run in parallel. As soon as `B` completes successfully, `C`, `D` and `E` will be launched, running in parallel as well. At last, when `D` and `E` both complete successfully, `F` will be launched.
 
+![Workflow example diagram](https://user-images.githubusercontent.com/1135351/44785755-453cfd80-ab92-11e8-8749-07544fef8fae.png)
+
 ### Additional parameters
 
 `SidekiqWorkflows.build` can take some additional parameters:
