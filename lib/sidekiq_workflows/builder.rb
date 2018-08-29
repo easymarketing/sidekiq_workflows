@@ -9,9 +9,12 @@ module SidekiqWorkflows
       @skip_workers = skip_workers
     end
 
-    def perform(worker, *payload, with_delay: nil)
-      return self if skip_workers.include?(worker)
-      child = @node.add_child(worker, *payload, with_delay: with_delay)
+    def perform(workers, *args, delay: nil)
+      workers = [worker: workers, payload: args, delay: delay] unless workers.is_a?(Array)
+      workers.reject! { |w| skip_workers.include?(w[:worker]) }
+      return self if workers.empty?
+
+      child = @node.add_group(workers)
       Builder.new(child, skip_workers)
     end
 
@@ -20,9 +23,4 @@ module SidekiqWorkflows
     end
   end
 
-  def self.build(workflow_uuid: nil, on_partial_complete: nil, except: [], &block)
-    root = Node.root(workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete)
-    Builder.new(root, except).then(&block)
-    root
-  end
 end
