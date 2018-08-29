@@ -8,6 +8,8 @@ module SidekiqWorkflows
   end
 
   require 'sidekiq_workflows/node'
+  require 'sidekiq_workflows/root_node'
+  require 'sidekiq_workflows/worker_node'
   require 'sidekiq_workflows/builder'
   require 'sidekiq_workflows/worker'
 
@@ -16,7 +18,7 @@ module SidekiqWorkflows
   end
 
   def self.from_h(hash, parent = nil)
-    parent ||= RootNode.new(workflow_uuid: hash[:workflow_uuid], on_partial_complete: hash[:on_partial_complete])
+    parent ||= hash.key?(:workers) ? WorkerNode.new(workflow_uuid: hash[:workflow_uuid], on_partial_complete: hash[:on_partial_complete], workers: hash[:workers]) : RootNode.new(workflow_uuid: hash[:workflow_uuid], on_partial_complete: hash[:on_partial_complete])
     hash[:children].each do |h|
       child = parent.add_group(h[:workers])
       from_h(h, child)
