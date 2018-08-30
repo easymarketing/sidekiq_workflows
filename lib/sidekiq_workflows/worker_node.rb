@@ -1,4 +1,5 @@
 require 'sidekiq_workflows/node'
+require 'active_support/inflector'
 
 module SidekiqWorkflows
   class WorkerNode

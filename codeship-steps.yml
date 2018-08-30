@@ -1,2 +1,2 @@
-- service: sidekiq-workflows
+- service: sidekiq-workflows-test
   command: bundle exec rake test

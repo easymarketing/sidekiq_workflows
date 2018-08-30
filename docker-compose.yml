@@ -1,0 +1,22 @@
+version: '3'
+services:
+  sidekiq-workflows-test:
+    build:
+      context: .
+      args:
+        - CONTRIBSYS_CREDENTIALS
+    depends_on:
+      - redis
+      - sidekiq-workflows-test-worker
+
+  sidekiq-workflows-test-worker:
+    build:
+      context: .
+      args:
+        - CONTRIBSYS_CREDENTIALS
+    command: "bundle exec sidekiq -r ./test/sidekiq_workflows/processor.rb"
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:4-alpine

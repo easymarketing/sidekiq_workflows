@@ -13,6 +13,5 @@ Gem::Specification.new 'sidekiq_workflows', '0.2.0' do |s|
   s.add_development_dependency 'rake', '~> 12.0'
   s.add_development_dependency 'mocha', '~> 1.3'
   s.add_development_dependency 'minitest', '~> 5.0'
-  s.add_development_dependency 'fakeredis', '~> 0'
   s.add_development_dependency 'pry', '~> 0.11.3'
 end
