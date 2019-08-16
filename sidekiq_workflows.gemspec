@@ -8,7 +8,7 @@ Gem::Specification.new 'sidekiq_workflows', '0.2.2' do |s|
   s.files = %w[
     Rakefile
   ] + Dir['lib/**/*']
-  s.add_dependency 'sidekiq-pro', '~> 4.0', '>= 4.0.2'
+  s.add_dependency 'sidekiq-pro', '>= 3.0'
   s.add_dependency 'activesupport', '~> 4.0'
   s.add_development_dependency 'rake', '~> 12.0'
   s.add_development_dependency 'mocha', '~> 1.3'
