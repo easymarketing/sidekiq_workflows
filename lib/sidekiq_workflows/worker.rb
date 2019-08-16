@@ -43,7 +43,8 @@ module SidekiqWorkflows
     end
 
     def self.perform_async(workflow, *args)
-      set(queue: worker_queue).send(:perform_async, workflow.serialize, *args)
+      set(queue: worker_queue)
+      super(workflow.serialize, *args)
     end
 
     def self.perform_workflow(workflow, on_complete: nil, on_complete_options: {})
