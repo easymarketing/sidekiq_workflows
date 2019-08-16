@@ -1,9 +1,9 @@
 PATH
   remote: .
   specs:
-    sidekiq_workflows (0.2.3)
+    sidekiq_workflows (0.2.4)
       activesupport (~> 4.0)
-      sidekiq-pro (>= 3.0)
+      sidekiq-pro (>= 3.0, < 5)
 
 GEM
   remote: https://rubygems.org/
