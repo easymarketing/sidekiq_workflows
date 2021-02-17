@@ -51,6 +51,9 @@ module SidekiqWorkflows
       batch.callback_queue = SidekiqWorkflows.callback_queue unless SidekiqWorkflows.callback_queue.nil?
       batch.description = "Workflow #{workflow.workflow_uuid || '-'} root batch"
       batch.on(:complete, on_complete, on_complete_options.merge(workflow_uuid: workflow.workflow_uuid)) if on_complete
+
+      yield batch if block_given?
+
       batch.jobs do
         perform_async(workflow)
       end
