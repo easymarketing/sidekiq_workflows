@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    sidekiq_workflows (0.2.4)
+    sidekiq_workflows (0.2.5)
       activesupport (~> 4.0)
       sidekiq-pro (>= 3.0, < 5)
 
