@@ -1,4 +1,4 @@
-Gem::Specification.new 'sidekiq_workflows', '0.2.5' do |s|
+Gem::Specification.new 'sidekiq_workflows', '0.2.6' do |s|
   s.licenses = %w[MIT]
   s.summary = "Sidekiq extension providing a workflow API on top of Sidekiq Pro's batches"
   s.description = "Sidekiq extension providing a workflow API on top of Sidekiq Pro's batches"
@@ -9,7 +9,7 @@ Gem::Specification.new 'sidekiq_workflows', '0.2.5' do |s|
     Rakefile
   ] + Dir['lib/**/*']
   s.add_dependency 'sidekiq-pro', '>= 3.0', '< 5'
-  s.add_dependency 'activesupport', '~> 4.0'
+  s.add_dependency 'activesupport', '>= 4.0'
   s.add_development_dependency 'rake', '~> 12.0'
   s.add_development_dependency 'mocha', '~> 1.3'
   s.add_development_dependency 'minitest', '~> 5.0'
