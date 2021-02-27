@@ -24,7 +24,7 @@ require 'sidekiq_workflows'
 ```
 ## Defining a workflow
 
-A workflow consists of Sidekiq workers which can execute in parallel. On successful completion (*all workers within a group have completed without raising an exception*), a follow-up group of workers can be launched. If a worker within a group raises an exception, the follow-up group will not be started. Retries are supported, please make sure that the Sidekiq workers being used have **retries enabled** and **`dead` set to true** (`sidekiq_options retry: 0` if you don't want any retries).
+A workflow consists of Sidekiq workers which can execute in parallel. On successful completion (*all workers within a group have completed successfully*), a follow-up group of workers can be launched. If a worker within a group dies, the follow-up group will not be started. Retries are supported, please make sure that the Sidekiq workers being used have **retries enabled** and **`dead` set to true** (`sidekiq_options retry: 0` if you don't want any retries).
 
 ```
 class A; include Sidekiq::Worker; def perform(x); end; end
