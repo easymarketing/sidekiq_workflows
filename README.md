@@ -14,13 +14,17 @@ https://github.com/mperham/sidekiq/wiki/Really-Complex-Workflows-with-Batches
 
 This is a lot of complex code scattered in various callbacks to enable a straightforward workflow. It is easy making mistakes when writing such code, and it's also hard to debug. This gem provides an API to define a workflow in a single place, abstracting the Batch API away.
 
+# Version 1 (breaking changes)
+
+Since version 1.0, retries are supported. Instead of the `on_complete` callback, success and death events are now used. The documentation has been updated to reflect the new interface.
+
 # Usage
 ```
 require 'sidekiq_workflows'
 ```
 ## Defining a workflow
 
-A workflow consists of Sidekiq workers which can execute in parallel. On successful completion (*all workers within a group have completed without raising an exception*), a follow-up group of workers can be launched. If a worker within a group raises an exception, the follow-up group will not be started. Retries are currently not supported, please make sure that the Sidekiq workers being used have **retries disabled** (`sidekiq_options retry: false`).
+A workflow consists of Sidekiq workers which can execute in parallel. On successful completion (*all workers within a group have completed without raising an exception*), a follow-up group of workers can be launched. If a worker within a group raises an exception, the follow-up group will not be started. Retries are supported, please make sure that the Sidekiq workers being used have **retries enabled** and **`dead` set to true** (`sidekiq_options retry: 0` if you don't want any retries).
 
 ```
 class A; include Sidekiq::Worker; def perform(x); end; end
@@ -54,17 +58,17 @@ end
 
 * `workflow_uuid`: To identify this workflow instance, you may want to provide an ID.
 * `except`: An array of worker classes to be entirely skipped in this workflow instance.
-* `on_partial_complete`: A callback that is being called whenever a group of workers within the workflow has completed (successfully or not). Modifying the example above:
+* `on_partial_success`: A callback that is being called whenever a group of workers within the workflow has completed successfully. Modifying the example above:
 
 ```
-class WorkflowCallbacks; def on_partial_complete(status, options); end; end
+class WorkflowCallbacks; def on_partial_success(status, options); end; end
 
-workflow = SidekiqWorkflows.build(on_partial_complete: 'WorkflowCallbacks#on_partial_complete') do
+workflow = SidekiqWorkflows.build(on_partial_success: 'WorkflowCallbacks#on_partial_success') do
   ...
 end
 ```
 
-This is especially useful if you want to report progress of the workflow to a client (for example, send a notification). The callback can also be used to verify sucess or failure. When using the example above, the callback will be called 5 times in total (for `A`, `B`, `C`, `[D, E]`, `F`). The `status` hash contains the `workflow_uuid` if present. For more details on `status` and `options`, see: https://github.com/mperham/sidekiq/wiki/Batches#callbacks
+This is especially useful if you want to report progress of the workflow to a client (for example, send a notification). When using the example above, the callback will be called 5 times in total (for `A`, `B`, `C`, `[D, E]`, `F`). The `status` hash contains the `workflow_uuid` if present. For more details on `status` and `options`, see: https://github.com/mperham/sidekiq/wiki/Batches#callbacks
 
 There's a an additional parameter to `perform` as well:
 
@@ -89,19 +93,21 @@ Once defined, you can launch a workflow like this:
 
 `batch_id = SidekiqWorkflows::Worker.perform_workflow(workflow)`
 
-This method returns a Sidekiq Pro batch ID. This batch represents the workflow, and its status changes to `complete` when the workflow has completed.
+This method returns a Sidekiq Pro batch ID. This batch represents the workflow.
 
 ### Additional parameters
 
 `SidekiqWorkflows::Worker.perform_workflow` can take some additional parameters:
 
-* `on_complete`: A callback that is being called once, when the workflow has completed.
-* `on_complete_options`: A hash of key/value options which will be part of the `options` hash of the callback.
+* `on_success`: A callback that is being called once, when the workflow has successfully completed.
+* `on_success_options`: A hash of key/value options which will be part of the `options` hash of the callback.
+* `on_death`: A callback that is being called once, when the workflow has 'died' (that is, retries have been exhausted for at least one worker in the hierarchy).
+* `on_death_options`: A hash of key/value options which will be part of the `options` hash of the callback.
 
 ```
-class WorkflowCallbacks; def on_complete(status, options); end; end
+class WorkflowCallbacks; def on_success(status, options); end; end
 
-SidekiqWorkflows::Worker.perform_workflow(workflow, on_complete: 'WorkflowCallbacks#on_complete', on_complete_options: {stuff: 1})
+SidekiqWorkflows::Worker.perform_workflow(workflow, on_success: 'WorkflowCallbacks#on_success', on_success_options: {stuff: 1})
 ```
 
 If `workflow_uuid` has been passed into `SidekiqWorkflows.build`, it will also be present inside the `options` hash.
@@ -117,7 +123,7 @@ SidekiqWorkflows.callback_queue = 'another_queue'
 
 `worker_queue` is the name of the Sidekiq queue which will be used for the gem's own meta worker. This worker usually has a execution time of only a few milliseconds, so you may want to use an appropriate queue for that.
 
-`callback_queue` is the name of the Sidekiq queue which will be used for the `on_partial_complete` and `on_complete` callback workers.
+`callback_queue` is the name of the Sidekiq queue which will be used for the `on_partial_success` and `on_success` callback workers.
 
 If not specified, the `default` Sidekiq queue will be used.
 
