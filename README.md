@@ -123,7 +123,7 @@ SidekiqWorkflows.callback_queue = 'another_queue'
 
 `worker_queue` is the name of the Sidekiq queue which will be used for the gem's own meta worker. This worker usually has a execution time of only a few milliseconds, so you may want to use an appropriate queue for that.
 
-`callback_queue` is the name of the Sidekiq queue which will be used for the `on_partial_success` and `on_success` callback workers.
+`callback_queue` is the name of the Sidekiq queue which will be used for the `on_partial_success`, `on_success` and `on_death` callback workers.
 
 If not specified, the `default` Sidekiq queue will be used.
 
