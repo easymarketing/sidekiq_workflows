@@ -18,7 +18,7 @@ module SidekiqWorkflows
   end
 
   def self.from_h(hash, parent = nil)
-    parent ||= hash.key?(:workers) ? WorkerNode.new(workflow_uuid: hash[:workflow_uuid], on_partial_complete: hash[:on_partial_complete], workers: hash[:workers]) : RootNode.new(workflow_uuid: hash[:workflow_uuid], on_partial_complete: hash[:on_partial_complete])
+    parent ||= hash.key?(:workers) ? WorkerNode.new(workflow_uuid: hash[:workflow_uuid], on_partial_success: hash[:on_partial_success], workers: hash[:workers]) : RootNode.new(workflow_uuid: hash[:workflow_uuid], on_partial_success: hash[:on_partial_success])
     hash[:children].each do |h|
       child = parent.add_group(h[:workers])
       from_h(h, child)
@@ -26,8 +26,8 @@ module SidekiqWorkflows
     parent
   end
 
-  def self.build(workflow_uuid: nil, on_partial_complete: nil, except: [], &block)
-    root = RootNode.new(workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete)
+  def self.build(workflow_uuid: nil, on_partial_success: nil, except: [], &block)
+    root = RootNode.new(workflow_uuid: workflow_uuid, on_partial_success: on_partial_success)
     Builder.new(root, except).then(&block)
     root
   end

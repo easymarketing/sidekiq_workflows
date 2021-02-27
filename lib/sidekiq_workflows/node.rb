@@ -1,7 +1,7 @@
 module SidekiqWorkflows
   module Node
     def add_group(workers)
-      @children << (child = WorkerNode.new(workers: workers, workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete, parent: self))
+      @children << (child = WorkerNode.new(workers: workers, workflow_uuid: workflow_uuid, on_partial_success: on_partial_success, parent: self))
       child
     end
 

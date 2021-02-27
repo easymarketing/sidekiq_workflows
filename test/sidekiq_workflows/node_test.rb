@@ -15,10 +15,10 @@ describe SidekiqWorkflows::Node do
   end
 
   let(:workflow_uuid) { SecureRandom.uuid }
-  let(:on_partial_complete) { 'dong' }
+  let(:on_partial_success) { 'dong' }
 
   it 'adds a child and references parent' do
-    root = SidekiqWorkflows::RootNode.new(workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete)
+    root = SidekiqWorkflows::RootNode.new(workflow_uuid: workflow_uuid, on_partial_success: on_partial_success)
     a = root.add_group([worker: FooWorker])
     b = a.add_group([worker: BazWorker])
     c = b.add_group([worker: BadWorker])
@@ -36,7 +36,7 @@ describe SidekiqWorkflows::Node do
 
     expect(root.all_nodes.count).must_equal 4
     expect(root.all_nodes.map(&:workflow_uuid)).must_equal([workflow_uuid] * 4)
-    expect(root.all_nodes.map(&:on_partial_complete)).must_equal([on_partial_complete] * 4)
+    expect(root.all_nodes.map(&:on_partial_success)).must_equal([on_partial_success] * 4)
   end
 
   describe 'build' do
@@ -120,7 +120,7 @@ describe SidekiqWorkflows::Node do
 
   describe '(de-)serialization' do
     it 'can be serialized and deserialized' do
-      original = SidekiqWorkflows.build(workflow_uuid: workflow_uuid, on_partial_complete: on_partial_complete) do
+      original = SidekiqWorkflows.build(workflow_uuid: workflow_uuid, on_partial_success: on_partial_success) do
         perform(FooWorker, 'foo').then do
           perform(BazWorker, 'baz')
         end
@@ -149,7 +149,7 @@ describe SidekiqWorkflows::Node do
       expect(workflow.children[1].children[0].children[0].workers[0][:payload]).must_equal ['bazfoo']
 
       expect(workflow.all_nodes.map(&:workflow_uuid)).must_equal([workflow_uuid] * 6)
-      expect(workflow.all_nodes.map(&:on_partial_complete)).must_equal([on_partial_complete] * 6)
+      expect(workflow.all_nodes.map(&:on_partial_success)).must_equal([on_partial_success] * 6)
     end
   end
 
