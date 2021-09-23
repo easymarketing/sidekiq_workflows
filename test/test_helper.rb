@@ -14,3 +14,6 @@ Sidekiq.configure_server do |config|
 end
 
 require 'sidekiq_workflows'
+
+SidekiqWorkflows.callback_queue = 'default'
+SidekiqWorkflows.worker_queue = 'default'

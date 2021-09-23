@@ -17,7 +17,8 @@ module SidekiqWorkflows
           child_batch = Sidekiq::Batch.new
           child_batch.callback_queue = SidekiqWorkflows.callback_queue unless SidekiqWorkflows.callback_queue.nil?
           child_batch.description = "Workflow #{workflow.workflow_uuid || '-'}"
-          child_batch.on(:complete, 'SidekiqWorkflows::Worker#on_complete', workflow: workflow.serialize, workflow_uuid: workflow.workflow_uuid)
+          child_batch.on(:success, 'SidekiqWorkflows::Worker#on_success', workflow: workflow.serialize, workflow_uuid: workflow.workflow_uuid)
+          child_batch.on(:death, 'SidekiqWorkflows::Worker#on_death', workflow: workflow.serialize, workflow_uuid: workflow.workflow_uuid)
           child_batch.jobs do
             workflow.workers.each do |entry|
               if entry[:delay]
@@ -31,7 +32,7 @@ module SidekiqWorkflows
       end
     end
 
-    def on_complete(status, options)
+    def on_success(status, options)
       workflow = ensure_deserialized(options['workflow'])
 
       if workflow.on_partial_complete
@@ -39,24 +40,35 @@ module SidekiqWorkflows
         ActiveSupport::Inflector.constantize(klass).new.send(method, status, options)
       end
 
-      perform_children(status.parent_batch, workflow) unless status.failures > 0
+      perform_children(status.parent_batch, workflow)
+    end
+
+    def on_death(status, options)
+      workflow = ensure_deserialized(options['workflow'])
+
+      if workflow.on_partial_complete
+        klass, method = workflow.on_partial_complete.split('#')
+        ActiveSupport::Inflector.constantize(klass).new.send(method, status, options)
+      end
     end
 
     def self.perform_async(workflow, *args)
       set(queue: worker_queue).send(:perform_async, workflow.serialize, *args)
     end
 
-    def self.perform_workflow(workflow, on_complete: nil, on_complete_options: {})
+    def self.perform_workflow(workflow, on_success: nil, on_success_options: {}, on_death: nil, on_death_options: {})
       batch = Sidekiq::Batch.new
       batch.callback_queue = SidekiqWorkflows.callback_queue unless SidekiqWorkflows.callback_queue.nil?
       batch.description = "Workflow #{workflow.workflow_uuid || '-'} root batch"
-      batch.on(:complete, on_complete, on_complete_options.merge(workflow_uuid: workflow.workflow_uuid)) if on_complete
+      batch.on(:success, on_success, on_success_options.merge(workflow_uuid: workflow.workflow_uuid)) if on_success
+      batch.on(:death, on_death, on_death_options.merge(workflow_uuid: workflow.workflow_uuid)) if on_death
 
       yield batch if block_given?
 
       batch.jobs do
         perform_async(workflow)
       end
+
       batch.bid
     end
 
