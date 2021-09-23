@@ -18,6 +18,7 @@ module SidekiqWorkflows
           child_batch.callback_queue = SidekiqWorkflows.callback_queue unless SidekiqWorkflows.callback_queue.nil?
           child_batch.description = "Workflow #{workflow.workflow_uuid || '-'}"
           child_batch.on(:success, 'SidekiqWorkflows::Worker#on_success', workflow: workflow.serialize, workflow_uuid: workflow.workflow_uuid)
+          child_batch.on(:death, 'SidekiqWorkflows::Worker#on_death', workflow: workflow.serialize, workflow_uuid: workflow.workflow_uuid)
           child_batch.jobs do
             workflow.workers.each do |entry|
               if entry[:delay]
@@ -34,12 +35,21 @@ module SidekiqWorkflows
     def on_success(status, options)
       workflow = ensure_deserialized(options['workflow'])
 
-      if workflow.on_partial_success
-        klass, method = workflow.on_partial_success.split('#')
+      if workflow.on_partial_complete
+        klass, method = workflow.on_partial_complete.split('#')
         ActiveSupport::Inflector.constantize(klass).new.send(method, status, options)
       end
 
       perform_children(status.parent_batch, workflow)
+    end
+
+    def on_death(status, options)
+      workflow = ensure_deserialized(options['workflow'])
+
+      if workflow.on_partial_complete
+        klass, method = workflow.on_partial_complete.split('#')
+        ActiveSupport::Inflector.constantize(klass).new.send(method, status, options)
+      end
     end
 
     def self.perform_async(workflow, *args)
