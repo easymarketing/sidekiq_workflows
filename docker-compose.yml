@@ -19,4 +19,4 @@ services:
       - redis
 
   redis:
-    image: redis:4-alpine
+    image: redis:6.2.7

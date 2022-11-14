@@ -12,6 +12,7 @@ module SidekiqWorkflows
   require 'sidekiq_workflows/worker_node'
   require 'sidekiq_workflows/builder'
   require 'sidekiq_workflows/worker'
+  require 'sidekiq_workflows/testing/inline_batches'
 
   def self.deserialize(string)
     from_h(JSON.parse(string, symbolize_names: true))
