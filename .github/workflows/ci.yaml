@@ -1,0 +1,49 @@
+name: CI
+
+env:
+  RACK_ENV: "test"
+  CONTRIBSYS_CREDENTIALS: ${{ secrets.CONTRIBSYS_CREDENTIALS }}
+  BUNDLE_GEMS__CONTRIBSYS__COM: ${{ secrets.CONTRIBSYS_CREDENTIALS }}
+  RUBYGEMS_PASSWORD: ${{ secrets.RUBYGEMS_PASSWORD }}
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install Ruby
+        uses: actions/setup-ruby@v1
+          with:
+            ruby-version: '2.7'
+      - name: Setup cache key and directory for gems cache
+        uses: actions/cache@v1
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gem-use-ruby-${{ hashFiles('**/Gemfile.lock') }}
+      - name: Bundle install
+        run: |
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+      - name: Run Worker
+        run: |
+          bundle exec sidekiq -r ./test/sidekiq_workflows/processor.rb
+      - name: Test
+        run: |
+          bundle exec rake test
