@@ -20,8 +20,8 @@ jobs:
         uses: eregon/use-ruby-action@master
       - name: Install Ruby
         uses: actions/setup-ruby@v1
-          with:
-            ruby-version: '2.7'
+        with:
+          ruby-version: '2.7'
       - name: ruby version
         run: |
           ruby -v
