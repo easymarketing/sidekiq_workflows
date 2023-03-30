@@ -13,15 +13,12 @@ on:
     branches:
 
 jobs:
-  worker:
+  test:
     runs-on: ubuntu-latest
+
     services:
       redis:
         image: redis
-        env:
-          HOST: redis
-          REDIS_HOST: redis
-          REDIS_PORT: 6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -29,6 +26,7 @@ jobs:
           --health-retries 5
         ports:
           - 6379:6379
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -39,9 +37,6 @@ jobs:
       - name: Ruby version
         run: |
           ruby -v
-      - name: Docker
-        run: |
-          docker ps
       - name: Setup cache key and directory for gems cache
         uses: actions/cache@v1
         with:
@@ -54,14 +49,6 @@ jobs:
       - name: Run Worker
         run: |
           bundle exec sidekiq -r ./test/sidekiq_workflows/processor.rb &
-
-  test:
-    runs-on: ubuntu-latest
-    needs: worker
-    steps:
-      - name: Ruby version
-        run: |
-          ruby -v
       - name: Test
         run: |
           bundle exec rake test
