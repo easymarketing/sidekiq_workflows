@@ -1,0 +1,77 @@
+name: CI/CD
+
+env:
+  RACK_ENV: 'test'
+  CONTRIBSYS_CREDENTIALS: ${{ secrets.CONTRIBSYS_CREDENTIALS }}
+  BUNDLE_GEMS__CONTRIBSYS__COM: ${{ secrets.CONTRIBSYS_CREDENTIALS }}
+  RUBYGEMS_PASSWORD: ${{ secrets.RUBYGEMS_PASSWORD }}
+  REDIS_URL: 'redis://localhost:6379'
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches:
+
+jobs:
+  CI:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+          bundler-cache: true
+      - name: Setup cache key and directory for gems cache
+        uses: actions/cache@v3
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gem-use-ruby-${{ hashFiles('**/Gemfile.lock') }}
+      - name: Bundle install
+        run: |
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+      - name: Run Worker
+        run: |
+          bundle exec sidekiq -r ./test/sidekiq_workflows/processor.rb &
+      - name: Test
+        run: |
+          bundle exec rake test
+  CD:
+    name: Publish gem
+    runs-on: ubuntu-latest
+    needs: CI
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+          bundler-cache: true
+      - name: Setup cache key and directory for gems cache
+        uses: actions/cache@v3
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gem-use-ruby-${{ hashFiles('**/Gemfile.lock') }}
+      - name: Bundle install
+        run: |
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+      - name: Publish gem
+        run: |
+          ./publish_gem.sh

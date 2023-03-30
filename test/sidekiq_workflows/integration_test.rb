@@ -25,13 +25,13 @@ describe SidekiqWorkflows::Worker do
 
         batch_id = SidekiqWorkflows::Worker.perform_workflow(workflow, on_success: 'SidekiqWorkflows::TestWorker#on_success', on_death: 'SidekiqWorkflows::TestWorker#on_death')
         sleep 10
-        expect(Redis.new(url: 'redis://redis:6379').smembers(workflow_uuid).to_set).must_equal(["WorkerFive - level 2", "WorkerThree - level 2", "WorkerOne - level 1", "WorkerTwo - level 1"].to_set)
+        expect(Redis.new(url: ENV.fetch('REDIS_URL', 'redis://redis:6379')).smembers(workflow_uuid).to_set).must_equal(["WorkerFive - level 2", "WorkerThree - level 2", "WorkerOne - level 1", "WorkerTwo - level 1"].to_set)
 
         Sidekiq::Batch::Status.new(batch_id).join
 
-        expect(Redis.new(url: 'redis://redis:6379').smembers(workflow_uuid).size).must_equal(7)
-        expect(Redis.new(url: 'redis://redis:6379').smembers(workflow_uuid)).must_include('success')
-        expect(Redis.new(url: 'redis://redis:6379').smembers(workflow_uuid)).wont_include('death')
+        expect(Redis.new(url: ENV.fetch('REDIS_URL', 'redis://redis:6379')).smembers(workflow_uuid).size).must_equal(7)
+        expect(Redis.new(url: ENV.fetch('REDIS_URL', 'redis://redis:6379')).smembers(workflow_uuid)).must_include('success')
+        expect(Redis.new(url: ENV.fetch('REDIS_URL', 'redis://redis:6379')).smembers(workflow_uuid)).wont_include('death')
       end
     end
 
@@ -55,15 +55,15 @@ describe SidekiqWorkflows::Worker do
 
         batch_id = SidekiqWorkflows::Worker.perform_workflow(workflow, on_success: 'SidekiqWorkflows::TestWorker#on_success', on_death: 'SidekiqWorkflows::TestWorker#on_death')
         sleep 10
-        expect(Redis.new(url: 'redis://redis:6379').smembers(workflow_uuid).to_set).must_equal(["WorkerFive - level 2", "WorkerThree - level 2", "WorkerOne - level 1", "WorkerTwo - level 1"].to_set)
+        expect(Redis.new(url: ENV.fetch('REDIS_URL', 'redis://redis:6379')).smembers(workflow_uuid).to_set).must_equal(["WorkerFive - level 2", "WorkerThree - level 2", "WorkerOne - level 1", "WorkerTwo - level 1"].to_set)
 
         Sidekiq::Batch::Status.new(batch_id).join
 
         sleep(3) until Sidekiq::Batch::Status.new(batch_id).dead?
 
-        expect(Redis.new(url: 'redis://redis:6379').smembers(workflow_uuid).size).must_equal(5)
-        expect(Redis.new(url: 'redis://redis:6379').smembers(workflow_uuid)).wont_include('success')
-        expect(Redis.new(url: 'redis://redis:6379').smembers(workflow_uuid)).must_include('death')
+        expect(Redis.new(url: ENV.fetch('REDIS_URL', 'redis://redis:6379')).smembers(workflow_uuid).size).must_equal(5)
+        expect(Redis.new(url: ENV.fetch('REDIS_URL', 'redis://redis:6379')).smembers(workflow_uuid)).wont_include('success')
+        expect(Redis.new(url: ENV.fetch('REDIS_URL', 'redis://redis:6379')).smembers(workflow_uuid)).must_include('death')
       end
     end
   end
