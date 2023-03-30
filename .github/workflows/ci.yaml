@@ -5,6 +5,7 @@ env:
   CONTRIBSYS_CREDENTIALS: ${{ secrets.CONTRIBSYS_CREDENTIALS }}
   BUNDLE_GEMS__CONTRIBSYS__COM: ${{ secrets.CONTRIBSYS_CREDENTIALS }}
   RUBYGEMS_PASSWORD: ${{ secrets.RUBYGEMS_PASSWORD }}
+  REDIS_URL: 'redis://localhost:6379'
 
 on:
   push:
@@ -17,13 +18,6 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      abc:
-        image: redis
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
       redis:
         image: redis
         options: >-
