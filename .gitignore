@@ -1,5 +1,4 @@
 pkg
 .env
-codeship.aes
 .ruby-version
 *.swp
