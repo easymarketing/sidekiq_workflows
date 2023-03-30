@@ -17,6 +17,13 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
+      abc:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       redis:
         image: redis
         options: >-
@@ -37,6 +44,9 @@ jobs:
       - name: Ruby version
         run: |
           ruby -v
+      - name: Docker
+        run: |
+          docker ps
       - name: Setup cache key and directory for gems cache
         uses: actions/cache@v1
         with:
