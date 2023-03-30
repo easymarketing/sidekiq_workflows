@@ -19,6 +19,9 @@ jobs:
     services:
       redis:
         image: redis
+        env:
+          REDIS_HOST: redis
+          REDIS_PORT: 6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -34,6 +37,9 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '2.7'
+      - name: Ruby version
+        run: |
+          ruby -v
       - name: Setup cache key and directory for gems cache
         uses: actions/cache@v1
         with:
