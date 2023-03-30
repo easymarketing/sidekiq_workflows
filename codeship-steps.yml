@@ -1,5 +1,0 @@
-- service: sidekiq-workflows-test
-  command: bundle exec rake test
-- service: sidekiq-workflows-test
-  tag: master
-  command: ./publish_gem.sh
