@@ -13,23 +13,19 @@ on:
     branches:
 
 jobs:
-  test:
+  worker:
     runs-on: ubuntu-latest
-
     services:
       redis:
         image: redis
         env:
-          REDIS_HOST: localhost
+          REDIS_HOST: redis
           REDIS_PORT: 6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          - 6379:6379
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -52,6 +48,14 @@ jobs:
       - name: Run Worker
         run: |
           bundle exec sidekiq -r ./test/sidekiq_workflows/processor.rb
+
+  test:
+    runs-on: ubuntu-latest
+    needs: worker
+    steps:
+      - name: Ruby version
+        run: |
+          ruby -v
       - name: Test
         run: |
           bundle exec rake test
