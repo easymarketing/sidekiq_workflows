@@ -19,6 +19,7 @@ jobs:
       redis:
         image: redis
         env:
+          HOST: redis
           REDIS_HOST: redis
           REDIS_PORT: 6379
         options: >-
@@ -36,6 +37,9 @@ jobs:
       - name: Ruby version
         run: |
           ruby -v
+      - name: Docker
+        run: |
+          docker ps
       - name: Setup cache key and directory for gems cache
         uses: actions/cache@v1
         with:
