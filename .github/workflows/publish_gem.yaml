@@ -1,33 +1,24 @@
 name: CI
 
 env:
-  RACK_ENV: 'test'
   CONTRIBSYS_CREDENTIALS: ${{ secrets.CONTRIBSYS_CREDENTIALS }}
   BUNDLE_GEMS__CONTRIBSYS__COM: ${{ secrets.CONTRIBSYS_CREDENTIALS }}
-  REDIS_URL: 'redis://localhost:6379'
+  RUBYGEMS_PASSWORD: ${{ secrets.RUBYGEMS_PASSWORD }}
 
 on:
-  pull_request:
-    branches:
+  push:
+    branches: [ master ]
 
 jobs:
   CI:
+    uses: ./.github/workflows/ci.yaml
+
+  Deployment:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         ruby: [2.7]
-
-    services:
-      redis:
-        image: redis
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
 
     steps:
       - name: Checkout repository
@@ -45,9 +36,6 @@ jobs:
         run: |
           bundle config path vendor/bundle
           bundle install --jobs 4 --retry 3
-      - name: Run Worker
+      - name: Publish gem
         run: |
-          bundle exec sidekiq -r ./test/sidekiq_workflows/processor.rb &
-      - name: Test
-        run: |
-          bundle exec rake test
+          ./publish_gem.sh
