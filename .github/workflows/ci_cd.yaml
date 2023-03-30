@@ -1,23 +1,21 @@
-name: CI
+name: CI/CD
 
 env:
   RACK_ENV: 'test'
   CONTRIBSYS_CREDENTIALS: ${{ secrets.CONTRIBSYS_CREDENTIALS }}
   BUNDLE_GEMS__CONTRIBSYS__COM: ${{ secrets.CONTRIBSYS_CREDENTIALS }}
+  RUBYGEMS_PASSWORD: ${{ secrets.RUBYGEMS_PASSWORD }}
   REDIS_URL: 'redis://localhost:6379'
 
 on:
+  push:
+    branches: [ master ]
   pull_request:
     branches:
 
 jobs:
   CI:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        ruby: [2.7]
-
     services:
       redis:
         image: redis
@@ -28,14 +26,13 @@ jobs:
           --health-retries 5
         ports:
           - 6379:6379
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
       - name: Install Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby }}
+          ruby-version: 2.7
       - name: Setup cache key and directory for gems cache
         uses: actions/cache@v1
         with:
@@ -51,3 +48,25 @@ jobs:
       - name: Test
         run: |
           bundle exec rake test
+  CD:
+    runs-on: ubuntu-latest
+    needs: CI
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      - name: Setup cache key and directory for gems cache
+        uses: actions/cache@v1
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gem-use-ruby-${{ hashFiles('**/Gemfile.lock') }}
+      - name: Bundle install
+        run: |
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+      - name: Publish gem
+        run: |
+          echo 'Publish'
