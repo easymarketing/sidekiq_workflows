@@ -1,4 +1,4 @@
-# sidekiq_workflows [ ![Codeship Status for easymarketing/sidekiq_workflows](https://app.codeship.com/projects/a5c63d80-9434-0137-d428-1ac26b315536/status?branch=master)](https://app.codeship.com/projects/356878) [![Gem Version](https://badge.fury.io/rb/sidekiq_workflows.svg)](https://badge.fury.io/rb/sidekiq_workflows)
+# sidekiq_workflows ![Github Actions](https://github.com/easymarketing/sidekiq_workflows/actions/workflows/ci.yaml/badge.svg?branch=master) [![Gem Version](https://badge.fury.io/rb/sidekiq_workflows.svg)](https://badge.fury.io/rb/sidekiq_workflows)
 
 Sidekiq extension providing a workflow API on top of Sidekiq Pro's batches. To use this gem, you need a [Sidekiq Pro](https://sidekiq.org/products/pro.html) license, and provide the credentials to the `gems.contribsys.com` repository via bundler:
 
