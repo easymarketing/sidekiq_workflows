@@ -6,11 +6,11 @@ require 'sidekiq/testing'
 require 'pry'
 
 Sidekiq.configure_client do |config|
-  config.redis = { url: 'redis://redis:6379' }
+  config.redis = { url: ENV.fetch('REDIS_URL', 'redis://redis:6379') }
 end
 
 Sidekiq.configure_server do |config|
-  config.redis = { url: 'redis://redis:6379' }
+  config.redis = { url: ENV.fetch('REDIS_URL', 'redis://redis:6379') }
 end
 
 require 'sidekiq_workflows'
